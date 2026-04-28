@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MPPSC Prelims 2026 &mdash; Marks Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --saffron: #FF6B1A;
+  --deep: #1A1035;
+  --cream: #FFF8F0;
+  --gold: #D4A017;
+  --green: #2ECC71;
+  --red: #E74C3C;
+  --card: #FFFFFF;
+  --border: #EDE8E0;
+  --muted: #8B8490;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); min-height: 100vh; }
+
+#login-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--deep) 0%, #2D1B69 50%, #1A3050 100%);
+  position: relative; overflow: hidden;
+}
+#login-screen::before {
+  content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,26,0.15) 0%, transparent 70%);
+  top: -200px; right: -200px;
+}
+.login-box {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(20px); border-radius: 24px; padding: 48px 40px;
+  width: 420px; text-align: center; box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+}
+.login-badge {
+  display: inline-block; background: var(--saffron); color: white;
+  font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+  padding: 6px 16px; border-radius: 20px; margin-bottom: 20px;
+}
+.login-box h1 { font-family: 'Playfair Display', serif; font-size: 32px; color: white; line-height: 1.2; margin-bottom: 8px; }
+.login-box p { color: rgba(255,255,255,0.5); font-size: 14px; margin-bottom: 36px; }
+.login-input-wrap { position: relative; margin-bottom: 16px; }
+.login-input-wrap input {
+  width: 100%; padding: 16px 20px; background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white;
+  font-size: 16px; font-family: 'DM Sans', sans-serif; letter-spacing: 4px;
+  text-align: center; outline: none; transition: border-color 0.2s;
+}
+.login-input-wrap input::placeholder { letter-spacing: 1px; color: rgba(255,255,255,0.3); }
+.login-input-wrap input:focus { border-color: var(--saffron); }
+.btn-login {
+  width: 100%; padding: 16px; background: var(--saffron); color: white; border: none;
+  border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; font-family: 'DM Sans', sans-serif; margin-top: 8px;
+}
+.btn-login:hover { background: #E55A0D; transform: translateY(-1px); }
+.login-error { color: #FF6B6B; font-size: 13px; margin-top: 12px; display: none; }
+.login-footer { color: rgba(255,255,255,0.25); font-size: 11px; margin-top: 24px; }
+
+#app { display: none; }
+.top-bar {
+  background: var(--deep); color: white; padding: 0 24px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+}
+.top-bar-title { font-family: 'Playfair Display', serif; font-size: 20px; color: white; }
+.top-bar-title span { color: var(--saffron); }
+.top-bar-right { display: flex; align-items: center; gap: 12px; }
+
+#set-selector { max-width: 700px; margin: 60px auto; padding: 0 20px; text-align: center; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 36px; margin-bottom: 12px; }
+.section-sub { color: var(--muted); font-size: 16px; margin-bottom: 40px; }
+.set-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.set-card {
+  border: 2px solid var(--border); border-radius: 16px; padding: 28px 16px;
+  cursor: pointer; transition: all 0.2s; background: white;
+}
+.set-card:hover { border-color: var(--saffron); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(255,107,26,0.15); }
+.set-card.active { border-color: var(--saffron); background: linear-gradient(135deg, #FFF3EB, #FFF8F4); box-shadow: 0 8px 24px rgba(255,107,26,0.2); }
+.set-letter { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 900; color: var(--deep); line-height: 1; margin-bottom: 8px; }
+.set-card.active .set-letter { color: var(--saffron); }
+.set-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.set-status { font-size: 11px; margin-top: 4px; font-weight: 600; }
+.status-ready { color: #27AE60; }
+.status-pending { color: #F39C12; }
+
+.btn-primary {
+  background: var(--saffron); color: white; border: none; border-radius: 12px;
+  padding: 16px 48px; font-size: 16px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+}
+.btn-primary:hover { background: #E55A0D; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,107,26,0.3); }
+.btn-secondary {
+  background: transparent; color: var(--deep); border: 2px solid var(--border);
+  border-radius: 12px; padding: 12px 28px; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--deep); }
+
+#quiz-section { display: none; max-width: 860px; margin: 0 auto; padding: 32px 20px 100px; }
+.quiz-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; background: white; border-radius: 16px;
+  padding: 20px 24px; border: 1px solid var(--border);
+}
+.quiz-info { display: flex; align-items: center; gap: 16px; }
+.set-badge {
+  background: var(--saffron); color: white; font-weight: 700; font-size: 18px;
+  width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+}
+.quiz-stats { display: flex; gap: 20px; }
+.stat-pill { background: var(--cream); border-radius: 20px; padding: 8px 16px; font-size: 13px; font-weight: 500; }
+.stat-pill span { font-weight: 700; color: var(--saffron); }
+.progress-bar-wrap { background: var(--border); border-radius: 4px; height: 4px; margin-bottom: 28px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--saffron), var(--gold)); border-radius: 4px; transition: width 0.3s; }
+
+.question-card {
+  background: white; border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; margin-bottom: 16px; transition: box-shadow 0.2s;
+}
+.question-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.q-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.q-num {
+  background: var(--deep); color: white; width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
+  font-weight: 700; flex-shrink: 0; margin-top: 2px;
+}
+.q-text { font-size: 15px; line-height: 1.6; font-weight: 500; flex: 1; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.option-btn {
+  padding: 12px 16px; border: 2px solid var(--border); border-radius: 10px;
+  background: var(--cream); cursor: pointer; font-size: 14px;
+  font-family: 'DM Sans', sans-serif; text-align: left; transition: all 0.15s;
+  display: flex; align-items: center; gap: 10px; line-height: 1.4;
+}
+.option-key { font-weight: 700; color: var(--muted); min-width: 20px; }
+.option-btn:hover { border-color: var(--saffron); background: #FFF3EB; }
+.option-btn.selected { border-color: var(--saffron); background: linear-gradient(135deg, #FFF3EB, #FFEADD); color: var(--deep); }
+.option-btn.selected .option-key { color: var(--saffron); }
+.skip-btn {
+  font-size: 12px; color: var(--muted); background: none; border: 1px dashed var(--border);
+  border-radius: 6px; padding: 4px 10px; cursor: pointer; margin-top: 8px;
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.skip-btn:hover { color: var(--deep); border-color: var(--deep); }
+.skip-btn.skipped { color: #999; background: #f5f5f5; }
+
+.calc-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; background: white;
+  border-top: 2px solid var(--border); padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 50; box-shadow: 0 -8px 30px rgba(0,0,0,0.08);
+}
+.calc-bar-info { font-size: 14px; color: var(--muted); }
+.calc-bar-info strong { color: var(--deep); }
+
+#results-section { display: none; max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
+.results-header { text-align: center; margin-bottom: 36px; }
+.results-header h2 { font-family: 'Playfair Display', serif; font-size: 36px; margin-bottom: 8px; }
+.results-header p { color: var(--muted); }
+.results-table {
+  background: white; border-radius: 20px; overflow: hidden;
+  border: 1px solid var(--border); margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+.results-table table { width: 100%; border-collapse: collapse; }
+.results-table th {
+  background: var(--deep); color: white; padding: 16px 20px; text-align: left;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+}
+.results-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.results-table tr:last-child td { border-bottom: none; }
+.results-table tr:hover td { background: var(--cream); }
+.score-chip { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 15px; min-width: 70px; text-align: center; }
+.score-high { background: #EAFAF1; color: #27AE60; }
+.score-mid { background: #FEF9E7; color: #F39C12; }
+.score-low { background: #FDEDEC; color: #E74C3C; }
+.correct-chip { color: #27AE60; font-weight: 600; }
+.wrong-chip { color: #E74C3C; font-weight: 600; }
+.skip-chip { color: #95A5A6; font-weight: 600; }
+
+.summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.summary-card { background: white; border-radius: 16px; padding: 24px; text-align: center; border: 1px solid var(--border); }
+.summary-card .big-num { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+.summary-card .label { font-size: 13px; color: var(--muted); }
+.correct-num { color: #27AE60; }
+.wrong-num { color: #E74C3C; }
+.skip-num { color: #95A5A6; }
+
+.btn-retry {
+  background: white; border: 2px solid var(--deep); color: var(--deep); border-radius: 12px;
+  padding: 14px 32px; font-size: 15px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.2s; margin-right: 12px;
+}
+.btn-retry:hover { background: var(--deep); color: white; }
+
+.info-banner {
+  background: #FFF3CD; border: 1px solid #FFD700; border-radius: 12px;
+  padding: 12px 20px; font-size: 13px; color: #856404; margin-bottom: 20px; text-align: center;
+}
+
+@media (max-width: 600px) {
+  .set-grid { grid-template-columns: repeat(2, 1fr); }
+  .options-grid { grid-template-columns: 1fr; }
+  .summary-cards { grid-template-columns: 1fr; }
+  .login-box { width: 90%; padding: 32px 24px; }
+  .quiz-stats { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen" style="display:flex;">
+  <div class="login-box">
+    <div class="login-badge">Verified Access Only</div>
+    <h1>MPPSC Prelims<br>Marks Calculator</h1>
+    <p>2026 Exam &bull; Sets A, B, C, D</p>
+
+    <!-- Step 1: Email -->
+    <div id="step-email">
+      <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:16px;text-align:left;line-height:1.6;">
+        Enter the email you used to purchase access. An OTP will be sent to verify you.
+      </div>
+      <div class="login-input-wrap">
+        <input type="email" id="email-input" placeholder="your@email.com"
+          style="letter-spacing:0px;text-align:left;"
+          onkeydown="if(event.key==='Enter')sendOtp()">
+      </div>
+      <button class="btn-login" id="send-otp-btn" onclick="sendOtp()">Send OTP &rarr;</button>
+      <p class="login-error" id="email-error"></p>
+      <p class="login-footer">Paid access only &middot; &#8377;10 &middot; <a href="https://t.me/YOUR_TELEGRAM" target="_blank" style="color:var(--saffron);text-decoration:none;">Contact on Telegram</a></p>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div id="step-otp" style="display:none;">
+      <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:16px;text-align:left;line-height:1.6;">
+        OTP sent to <strong id="otp-sent-to" style="color:white;"></strong>.<br>Check your inbox (and spam folder).
+      </div>
+      <div class="login-input-wrap">
+        <input type="text" id="otp-input" placeholder="Enter 6-digit OTP"
+          maxlength="6" onkeydown="if(event.key==='Enter')verifyOtp()">
+      </div>
+      <button class="btn-login" id="verify-otp-btn" onclick="verifyOtp()">Verify & Enter &rarr;</button>
+      <p class="login-error" id="otp-error"></p>
+      <div style="margin-top:12px;">
+        <button onclick="resendOtp()" id="resend-btn"
+          style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+          Resend OTP
+        </button>
+        <button onclick="backToEmail()"
+          style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-left:16px;">
+          &larr; Change Email
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="top-bar">
+    <div class="top-bar-title">MPPSC <span>Prelims 2025</span></div>
+    <div class="top-bar-right">
+      <button class="btn-secondary" onclick="goHome()" style="padding:8px 18px;font-size:13px;">&larr; Home</button>
+    </div>
+  </div>
+
+  <div id="set-selector">
+    <div class="section-title">Select Your Paper Set</div>
+    <p class="section-sub">Choose the set printed on your question paper (e.g. 45-B or 45-A)</p>
+    <div class="set-grid">
+      <div class="set-card" onclick="selectSet('A')" id="set-A">
+        <div class="set-letter">A</div>
+        <div class="set-label">Set A</div>
+        <div class="set-status status-ready">Ready</div>
+      </div>
+      <div class="set-card" onclick="selectSet('B')" id="set-B">
+        <div class="set-letter">B</div>
+        <div class="set-label">Set B</div>
+        <div class="set-status status-ready">Ready</div>
+      </div>
+      <div class="set-card" onclick="selectSet('C')" id="set-C">
+        <div class="set-letter">C</div>
+        <div class="set-label">Set C</div>
+        <div class="set-status status-ready">Ready</div>
+      </div>
+      <div class="set-card" onclick="selectSet('D')" id="set-D">
+        <div class="set-letter">D</div>
+        <div class="set-label">Set D</div>
+        <div class="set-status status-ready">Ready</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">Start Answering Questions &rarr;</button>
+  </div>
+
+  <div id="quiz-section">
+    <div class="quiz-header">
+      <div class="quiz-info">
+        <div class="set-badge" id="quiz-set-badge">B</div>
+        <div>
+          <div style="font-weight:700;font-size:17px;">MPPSC Prelims 2026</div>
+          <div style="font-size:13px;color:var(--muted);">Set <span id="quiz-set-name">B</span> &bull; 100 Questions &bull; Max 300 Marks</div>
+        </div>
+      </div>
+      <div class="quiz-stats">
+        <div class="stat-pill">Answered: <span id="stat-answered">0</span></div>
+        <div class="stat-pill">Skipped: <span id="stat-skipped">0</span></div>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div id="questions-container"></div>
+    <div style="height:80px"></div>
+  </div>
+
+  <div id="results-section">
+    <div class="results-header">
+      <h2>Your Score Card</h2>
+      <p>Set <span id="result-set-name">B</span> &bull; MPPSC Prelims 2026 &bull; Marking: +3 / -1</p>
+    </div>
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="big-num correct-num" id="res-correct">0</div>
+        <div class="label">Correct Answers</div>
+      </div>
+      <div class="summary-card">
+        <div class="big-num wrong-num" id="res-wrong">0</div>
+        <div class="label">Skipped / Not Attempted</div>
+      </div>
+      <div class="summary-card">
+        <div class="big-num" style="color:var(--saffron)" id="res-skip">0</div>
+        <div class="label">Total Questions</div>
+      </div>
+    </div>
+    <div class="results-table">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Institute / Answer Key</th>
+            <th style="text-align:center">Correct</th>
+            <th style="text-align:center">Wrong</th>
+            <th style="text-align:center">Skipped</th>
+            <th style="text-align:center">Score / 300</th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+    </div>
+    <div style="text-align:center;margin-top:24px;">
+      <button class="btn-retry" onclick="goHome()">Try Another Set</button>
+      <button class="btn-primary" onclick="startQuiz()">Re-attempt Same Set</button>
+    </div>
+  </div>
+
+  <div class="calc-bar" id="calc-bar" style="display:none">
+    <div class="calc-bar-info">
+      <strong id="bar-answered">0</strong>/100 answered &nbsp;&bull;&nbsp; <strong id="bar-skipped">0</strong> skipped
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <select id="category-select" style="padding:10px 14px;border-radius:10px;border:2px solid var(--border);font-family:'DM Sans',sans-serif;font-size:13px;background:white;color:var(--deep);cursor:pointer;outline:none;">
+        <option value="">My Category</option>
+        <option value="General">General</option>
+        <option value="OBC">OBC</option>
+        <option value="SC">SC</option>
+        <option value="ST">ST</option>
+        <option value="EWS">EWS</option>
+      </select>
+      <button class="btn-primary" onclick="calculateResults()" style="padding:12px 32px">
+        Calculate My Score &rarr;
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const QUESTIONS_B = [{"q": 1, "text": "According to Economic Survey 2024-25, the score of Sustainable Development Goal 9 of Madhya Pradesh in the year 2023-24 was:", "options": {"A": "43", "B": "37", "C": "39", "D": "90"}}, {"q": 2, "text": "Madhya Pradesh Industrial Promotion Policy 2025, launched in February 2025 includes how many sector specific strategies?", "options": {"A": "9", "B": "10", "C": "11", "D": "12"}}, {"q": 3, "text": "In recent years, the agriculture sector in India has shown growth annually from Financial Year 2017 to Financial Year 2023, demonstrating resilience despite challenges, which was approximately:", "options": {"A": "4.2 percent", "B": "4.8 percent", "C": "5.0 percent", "D": "5.2 percent"}}, {"q": 4, "text": "How much growth was recorded in patent filing in Madhya Pradesh during the period from 2018-19 to 2022-23?", "options": {"A": "230%", "B": "320%", "C": "180%", "D": "280%"}}, {"q": 5, "text": "India's foreign exchange reserve at the end of December, 2024 was:", "options": {"A": "USD 604.3 billion", "B": "USD 640.3 billion", "C": "USD 603.4 billion", "D": "USD 630.4 billion"}}, {"q": 6, "text": "Under National Viral Hepatitis Control Programme, by which year the objective is to eliminate viral hepatitis-C?", "options": {"A": "2033", "B": "2032", "C": "2031", "D": "2030"}}, {"q": 7, "text": "According to the report published by the Confederation of Indian Industry in February 2025, the share of pharmaceutical sector of Madhya Pradesh in terms of gross fixed capital formation in India is:", "options": {"A": "2.9%", "B": "1.0%", "C": "1.9%", "D": "2.2%"}}, {"q": 8, "text": "According to the Economic Survey 2024-25 of Madhya Pradesh, the solar energy capacity of Madhya Pradesh up to October, 2024 was:", "options": {"A": "60166 Megawatt", "B": "66610 Megawatt", "C": "66160 Megawatt", "D": "61660 Megawatt"}}, {"q": 9, "text": "According to Economic Survey of Madhya Pradesh 2024-25, under 'One District One Product (ODOP)', which district is not included in case of six major agricultural produces?", "options": {"A": "Anuppur", "B": "Narsinghpur", "C": "Balaghat", "D": "Gwalior"}}, {"q": 10, "text": "The Financial Inclusion Index of Reserve Bank of India in March, 2024 was:", "options": {"A": "64.2", "B": "62.4", "C": "53.9", "D": "59.3"}}, {"q": 11, "text": "The award given by Madhya Pradesh Government in Mallakhamb sports is:", "options": {"A": "Prabhash Joshi Sports Award", "B": "Ved Pratap Vaidik Sports Award", "C": "Alok Mehta Sports Award", "D": "Kailash Chandra Pant Sports Award"}}, {"q": 12, "text": "In which field was Mohan Nagar awarded the Padma Shri in 2026 for his outstanding contribution?", "options": {"A": "Sports", "B": "Politics", "C": "Industry", "D": "Environmental Conservation"}}, {"q": 13, "text": "What was the theme of the Sahityotsav 2026 organised by the Sahitya Akademi under the Department of Culture, Government of India, from March 30 to April 4, 2026?", "options": {"A": "Festival of poetry", "B": "Festival of letters", "C": "Festival of story", "D": "Festival of folklore"}}, {"q": 14, "text": "What is the new base year of the Consumer Price Index (CPI)?", "options": {"A": "2011", "B": "2012", "C": "2023", "D": "2024"}}, {"q": 15, "text": "Who was awarded the Padma Bhushan in 2026 for contribution to the financial sector (industry and trade)?", "options": {"A": "Ajay Piramal", "B": "Uday Kotak", "C": "Deepak Parekh", "D": "Raghuram Rajan"}}, {"q": 16, "text": "'Suman Sakhi Chatbot' is an example of digital initiative in which sector?", "options": {"A": "Education", "B": "Health", "C": "Transport", "D": "Defence"}}, {"q": 17, "text": "The United Nations has declared the year 2025 as the international year of what?", "options": {"A": "International Year of Forests", "B": "International Year of Millets", "C": "International Year of Sustainable Energy", "D": "International Year of Cooperatives"}}, {"q": 18, "text": "From where was the 'Swasth Nari, Sashakt Parivar Abhiyaan' launched by the Prime Minister?", "options": {"A": "Bhopal", "B": "Indore", "C": "Dhar", "D": "Ujjain"}}, {"q": 19, "text": "On 14th January 2026, Sergio Gor assumed charge as the Ambassador of which country to India?", "options": {"A": "Italy", "B": "United States of America", "C": "France", "D": "Germany"}}, {"q": 20, "text": "By which countries will the 2026 Women's T20 World Cup be hosted?", "options": {"A": "India and Sri Lanka", "B": "Australia and South Africa", "C": "England and Wales", "D": "New Zealand and West Indies"}}, {"q": 21, "text": "What is the population of Kamar Tribe in Madhya Pradesh according to the 2011 Census?", "options": {"A": "266", "B": "466", "C": "666", "D": "866"}}, {"q": 22, "text": "In which year was TRIFED established?", "options": {"A": "1986", "B": "1987", "C": "1988", "D": "1989"}}, {"q": 23, "text": "What was the income limit set for Scheduled Tribe students to pursue education abroad, in the year 2024-25?", "options": {"A": "&#8377;6 lakh", "B": "&#8377;8 lakh", "C": "&#8377;10 lakh", "D": "&#8377;15 lakh"}}, {"q": 24, "text": "According to the 2011 Census, how many tribes are there in Madhya Pradesh (except particularly vulnerable tribal groups)?", "options": {"A": "46", "B": "45", "C": "44", "D": "43"}}, {"q": 25, "text": "The word 'Netam' is related to:", "options": {"A": "Taboo", "B": "Totem", "C": "Marriage custom", "D": "Tribe name"}}, {"q": 26, "text": "The traditional folk musical instrument 'Gudum Baja' of the tribals of Madhya Pradesh is related to which district from the following?", "options": {"A": "Shahdol", "B": "Chhindwara", "C": "Mandla", "D": "Jhabua"}}, {"q": 27, "text": "According to the Census of 2011, what percentage of the total Scheduled Tribe population of the country is in Madhya Pradesh?", "options": {"A": "31.84", "B": "29.25", "C": "28.16", "D": "14.69"}}, {"q": 28, "text": "Among the Gond Tribe, the word 'Baree' is related to:", "options": {"A": "Sports", "B": "Agriculture", "C": "Marriage", "D": "Religious ritual"}}, {"q": 29, "text": "Indal puja is related to which tribe of Madhya Pradesh?", "options": {"A": "Barela", "B": "Gond", "C": "Baiga", "D": "Sahariya"}}, {"q": 30, "text": "According to the provisions of which Schedule of the Constitution, the Tribal Advisory Committee was constituted in the States?", "options": {"A": "Third", "B": "Fourth", "C": "Fifth", "D": "Sixth"}}, {"q": 31, "text": "In the Vedic Literature, Sabha and Samiti are called two daughters of which deity?", "options": {"A": "Agni", "B": "Prajapati", "C": "Varun", "D": "Rudra"}}, {"q": 32, "text": "In which inscription is the mention of Bharatvarsha found?", "options": {"A": "Ayodhya Inscription of Dhandeva", "B": "Iron Pillar Inscription of Mehrauli", "C": "Garudadhwaja Inscription of Besnagar", "D": "Hathigumpha Inscription of Kharavela"}}, {"q": 33, "text": "The depiction of Krishna and Balarama is found on the coins of which Indo-Greek ruler?", "options": {"A": "Menandar", "B": "Demetrius", "C": "Agathokleis", "D": "Eucratides"}}, {"q": 34, "text": "Who was the author of The Secret Doctrine?", "options": {"A": "Raja Ram Mohan Roy", "B": "H. P. Blavatsky", "C": "Keshab Chandra Sen", "D": "D. K. Karve"}}, {"q": 35, "text": "Who also founded the United Provinces Kisan Sabha in 1918 A.D.?", "options": {"A": "Mahamana Malviya", "B": "Baba Ram Chandra", "C": "Indra Narayan Dwivedi", "D": "Jhinguri Singh"}}, {"q": 36, "text": "When did the Tebhaga Movement begin in Bengal?", "options": {"A": "September 1946", "B": "August 1945", "C": "January 1938", "D": "March 1935"}}, {"q": 37, "text": "In which text the four Ashramas have been mentioned for the first time?", "options": {"A": "Rigveda", "B": "Jabalopanisada", "C": "Manusmriti", "D": "Mahabharata"}}, {"q": 38, "text": "As per ancient Sanskrit literature, which of the following spices was called Yavanapriya?", "options": {"A": "Ginger", "B": "Nutmeg", "C": "Black pepper", "D": "Cardamom"}}, {"q": 39, "text": "Who among the following was a female Alwar Saint?", "options": {"A": "Madhura Kavi", "B": "Perumal", "C": "Tirupan", "D": "Andal"}}, {"q": 40, "text": "The draft 'The Philosophy of the Bomb' was written by Bhagwati Charan Vohra at whose request and after a full discussion with him?", "options": {"A": "Ram Prasad Bismil", "B": "Sukhdev", "C": "Rajguru", "D": "Chandrashekhar Azad"}}, {"q": 41, "text": "Which branch of science deals with the observation, understanding and prediction of weather and atmospheric conditions?", "options": {"A": "Climatology", "B": "Oceanography", "C": "Meteorology", "D": "Seismology"}}, {"q": 42, "text": "How many targets have been set according to the 2030 Agenda for Sustainable Development?", "options": {"A": "116", "B": "132", "C": "154", "D": "169"}}, {"q": 43, "text": "From where was Chandrayaan-3 launched and what was unique about its landing site?", "options": {"A": "Satish Dhawan Space Centre (SHAR), Sriharikota &mdash; Near the moon's south polar region", "B": "Vikram Sarabhai Space Centre, Thiruvananthapuram &mdash; Equatorial region of the moon", "C": "Sriharikota &mdash; Near the moon's north pole", "D": "SDSC, Sriharikota &mdash; On the far side of the moon"}}, {"q": 44, "text": "When was the International Heat Wave Workshop 2026 held?", "options": {"A": "7-8 January, 2026", "B": "30-31 January, 2026", "C": "11-12 February, 2026", "D": "20-21 February, 2026"}}, {"q": 45, "text": "The CSIR-National Geophysical Research Institute (CSIR-NGRI) is located in which city?", "options": {"A": "Hyderabad", "B": "Bengaluru", "C": "New Delhi", "D": "Kolkata"}}, {"q": 46, "text": "As per the sample registration system, what was the Under-5 mortality rate in 2020 in India?", "options": {"A": "26", "B": "32", "C": "41", "D": "54"}}, {"q": 47, "text": "Which Indian Communication satellite, launched in the early 1980s, became the first fully operational satellite of the INSAT series and significantly strengthened India's telecommunication and broadcasting services?", "options": {"A": "INSAT-1A &mdash; 10th April, 1982", "B": "INSAT-1B &mdash; 30th August, 1983", "C": "IRS-1A &mdash; 17th March, 1988", "D": "APPLE &mdash; 19th June, 1981"}}, {"q": 48, "text": "In June 2025, Group Captain Shubhanshu Shukla created history by reaching a major milestone in India's space journey. What was his historic achievement?", "options": {"A": "He became the first Indian to lead a manned mission to moon.", "B": "He successfully completed the first Indian space walk in open space.", "C": "He became the first Indian ever to set foot on the International Space Station (ISS) and served as mission pilot.", "D": "He became the first Indian to pilot a spacecraft to Mars."}}, {"q": 49, "text": "Which part of the human brain is responsible for thermoregulation?", "options": {"A": "Medulla oblongata", "B": "Cerebrum", "C": "Hypothalamus", "D": "Cerebellum"}}, {"q": 50, "text": "If one parent has sickle cell disease and the other is a sickle cell disease carrier, what percentage of their children may be sickle cell disease carriers?", "options": {"A": "25%", "B": "50%", "C": "75%", "D": "100%"}}, {"q": 51, "text": "In computer, BIOS stands for:", "options": {"A": "Binary Input/Output System", "B": "Basic Input/Output System", "C": "Bit Input/Output System", "D": "Byte Input/Output System"}}, {"q": 52, "text": "The terminology 'Artificial Intelligence' was first coined by:", "options": {"A": "John Winston", "B": "Richard Evans", "C": "Henry Samuel", "D": "John McCarthy"}}, {"q": 53, "text": "LED is a digital display used in calculators, watches etc. LED stands for:", "options": {"A": "Light Emitting Display", "B": "Liquid Electronic Display", "C": "Light Emitting Diode", "D": "Liquid Electronic Diode"}}, {"q": 54, "text": "e-ANUGYA is an e-Governance system to provide No Objection Certificate for:", "options": {"A": "Crop movement outside Madhya Pradesh.", "B": "Vehicle movement outside Madhya Pradesh.", "C": "Mineral movement outside Madhya Pradesh.", "D": "Liquor movement outside Madhya Pradesh."}}, {"q": 55, "text": "Web page of a website can be designed using HTML. HTML stands for:", "options": {"A": "High Text Machine Language", "B": "Hyper Text Machine Language", "C": "High Text Markup Language", "D": "Hyper Text Markup Language"}}, {"q": 56, "text": "Which of the following is not an AI language?", "options": {"A": "LISP", "B": "OOP", "C": "PROLOG", "D": "VBI"}}, {"q": 57, "text": "eMARG is an e-Governance solution for:", "options": {"A": "Maintenance of rural roads.", "B": "Maintenance of State highways.", "C": "Maintenance of national highways.", "D": "None of the above"}}, {"q": 58, "text": "Optical fibre cables are used for high-speed and long-distance data transmission. Splicing of optical fibres means:", "options": {"A": "Bending of optical fibres", "B": "Drawing of optical fibres", "C": "Joining of optical fibres", "D": "Cutting of optical fibres"}}, {"q": 59, "text": "In web browsing, URL stands for:", "options": {"A": "Uniform Resource Location", "B": "Universal Resource Location", "C": "Uniform Resource Locator", "D": "Universal Resource Locator"}}, {"q": 60, "text": "In computer, EPROM stands for:", "options": {"A": "Electrically Programmable Read-Only Memory", "B": "Electronically Programmable Read-Only Memory", "C": "Extended Programmable Read-Only Memory", "D": "Erasable Programmable Read-Only Memory"}}, {"q": 61, "text": "In which of the minor rock edicts of Emperor Ashoka, found in Madhya Pradesh, is his personal name mentioned?", "options": {"A": "Rupnath", "B": "Gurjara", "C": "Saro-Maro", "D": "Panguraria"}}, {"q": 62, "text": "Who is credited with transforming the Maach folk theatre style of Malwa into the present day performing art?", "options": {"A": "Siddheshwar Sen", "B": "Kaushal Singh", "C": "Kesari Singh", "D": "Rewaram Kuliwala"}}, {"q": 63, "text": "Which of the following statements about the main features of the 'Jagadambi Temple' in Khajuraho is false?", "options": {"A": "This temple has both a half mandapa and a verandah arranged within a single chamber.", "B": "This temple lacks a circumambulation path.", "C": "There is a colossal statue of Laxmi in the sanctorum.", "D": "A statue of Vishnu is installed at the main entrance of the sanctorum."}}, {"q": 64, "text": "Match the following tribes of Madhya Pradesh with their respective sub-tribes: (a) Baiga (b) Bharia (c) Kol (d) Sahariya &mdash; (i) Rohia/Rotela (ii) Narotia (iii) Dandami (iv) Bhumiya (Bhumika)", "options": {"A": "(i) (ii) (iii) (iv)", "B": "(ii) (iv) (i) (iii)", "C": "(iii) (i) (iv) (ii)", "D": "(iv) (iii) (ii) (i)"}}, {"q": 65, "text": "Which of the following facts about the Adamgarh archaeological site in Narmadapuram district of Madhya Pradesh is false?", "options": {"A": "This archaeological site is located on the bank of the Narmada River.", "B": "The oldest evidences of animal husbandry have been found here.", "C": "Archaeological excavations were carried out at this site by V. S. Wakankar.", "D": "A large number of palaeolithic tools and bone remains have been found here."}}, {"q": 66, "text": "Which of the following sites in Madhya Pradesh is recognized as a 'World Heritage Site'?", "options": {"A": "The historical group of Orchha", "B": "The Sanchi Stupa", "C": "The Satpura Tiger Reserve", "D": "The Bhojeshwar Temple Complex"}}, {"q": 67, "text": "Match the following folk songs with their characteristics: (a) Railo Geet (b) Singaji and Daluji (c) Bambuliya (d) Alha-Udal &mdash; (i) Nirguni philosophical song (ii) Heroic song (iii) Songs for young men and women (iv) Religious song", "options": {"A": "(i) (ii) (iii) (iv)", "B": "(iv) (iii) (i) (ii)", "C": "(iii) (i) (iv) (ii)", "D": "(i) (iv) (iii) (ii)"}}, {"q": 68, "text": "Match the following dialects with their corresponding tribal regions: (a) Nimadi (b) Korku (c) Bhili (d) Gondi &mdash; (i) Mandla, Dindori (ii) Ratlam, Alirajpur (iii) Barwani, Khandwa (iv) Betul, Narmadapuram", "options": {"A": "(iii) (iv) (ii) (i)", "B": "(iv) (iii) (i) (ii)", "C": "(i) (ii) (iii) (iv)", "D": "(ii) (i) (iv) (iii)"}}, {"q": 69, "text": "Match the following writers from Madhya Pradesh with their respective works: (a) Keshav Das (b) Bhawani Prasad Mishra (c) Padmakar (d) Mulla Ramuji &mdash; (i) Gangalahari (ii) Gulabi Urdu (iii) Gandhi Panchsati (iv) Kavipriya", "options": {"A": "(iv) (iii) (i) (ii)", "B": "(i) (iv) (iii) (ii)", "C": "(ii) (i) (ii) (iv)", "D": "(iii) (i) (iv) (ii)"}}, {"q": 70, "text": "According to the novel Anandamath by Bankim Chandra Chatterjee, song Vande Mataram was sung by which character?", "options": {"A": "Mahendra Singh", "B": "Kalyani", "C": "Sipahi Bhavananda", "D": "Shanti"}}, {"q": 71, "text": "How were the members of the Indian Constituent Assembly elected?", "options": {"A": "Directly by the people of India", "B": "Indirectly by the members of the Provincial Legislative Assemblies", "C": "Nominated by the Governor General", "D": "Indirectly by the Provincial Committees of the Congress"}}, {"q": 72, "text": "In the execution of which of the following functions, Lok Sabha and Rajya Sabha have equal powers?", "options": {"A": "Passage of money bill", "B": "Creation of new All India Service", "C": "Passage of no-confidence motion against the Government", "D": "Passage of a Constitution Amendment Bill"}}, {"q": 73, "text": "Nagar Panchayat is constituted for which of the following areas in Madhya Pradesh?", "options": {"A": "Transitional urban area", "B": "Small-scale area", "C": "Industrial area", "D": "Large urban area"}}, {"q": 74, "text": "Which of the following is not an essential function of Gram Panchayat in Madhya Pradesh?", "options": {"A": "To protect the assets of Gram Panchayat", "B": "To promote cooperatives", "C": "To catch unowned animals and mad dogs", "D": "To operate police stations"}}, {"q": 75, "text": "Which of the following Commissions has been given the special responsibility of safeguarding the rights and interests of the Anglo-Indian Community?", "options": {"A": "The National Commission for Scheduled Castes", "B": "The National Commission for Scheduled Tribes", "C": "The National Backward Classes Commission", "D": "The National Human Rights Commission"}}, {"q": 76, "text": "In Part IV, relating to Directive Principles of State Policy, which of the following Articles was not added by the Forty-second Constitution Amendment Act?", "options": {"A": "Article 39A", "B": "Article 43A", "C": "Article 43B", "D": "Article 48A"}}, {"q": 77, "text": "The service conditions of the judges of the Supreme Court are decided by which Article of the Constitution?", "options": {"A": "129(3)", "B": "127(4)", "C": "122(1)", "D": "124(2)"}}, {"q": 78, "text": "Which of the following statements is incorrect regarding the sessions of Madhya Pradesh Legislative Assembly?", "options": {"A": "There must be minimum two sittings of the Legislative Assembly in a calendar year.", "B": "There must not be a gap of more than six months between two sittings.", "C": "The Governor summons the sitting of the Legislative Assembly.", "D": "The Speaker of the Legislative Assembly prorogues its sitting."}}, {"q": 79, "text": "Which of the following is not correct about the Governor of Madhya Pradesh?", "options": {"A": "The Governor is appointed by the President.", "B": "The Governor has the power to appoint the Judges of the High Court.", "C": "During emergency, he acts as the representative of the President.", "D": "The Governor is the head of the State Executive."}}, {"q": 80, "text": "The Parliament's power to amend the Constitution received first challenge through which of the following cases?", "options": {"A": "The Kesavananda Bharati Case", "B": "The Golaknath Case", "C": "The Champakam Dorairajan Case", "D": "The Shankari Prasad Case"}}, {"q": 81, "text": "Which is the highest peak in the Kumaon Himalaya?", "options": {"A": "Kamet", "B": "Nanda Devi", "C": "Trishul", "D": "Badrinath"}}, {"q": 82, "text": "Based on the following statements, select the correct answer: (a) Western disturbances are driven by westerly winds. (b) Western disturbances bring moisture from the Mediterranean Sea. (c) They cause rainfall in the northwestern parts of India during the winter season.", "options": {"A": "Only (c) is correct", "B": "Only (a) and (c) are correct", "C": "Only (b) and (c) are correct", "D": "(a), (b) and (c) are correct"}}, {"q": 83, "text": "Which is the longest lake in India?", "options": {"A": "Chilika", "B": "Kolleru", "C": "Vembanad", "D": "Pookode"}}, {"q": 84, "text": "In the year 2023-24, what was the correct ascending order of the top four States in the country based on rice production?", "options": {"A": "Punjab, Telangana, Uttar Pradesh, West Bengal", "B": "Punjab, West Bengal, Uttar Pradesh, Telangana", "C": "Odisha, Telangana, Punjab, Uttar Pradesh", "D": "West Bengal, Telangana, Punjab, Uttar Pradesh"}}, {"q": 85, "text": "According to the Indian Minerals Yearbook 2022, which State was on the second rank in the country in terms of Manganese production?", "options": {"A": "Odisha", "B": "Karnataka", "C": "Maharashtra", "D": "Madhya Pradesh"}}, {"q": 86, "text": "According to the 2011 Census, which State had the lowest density of population in the country?", "options": {"A": "Meghalaya", "B": "Mizoram", "C": "Arunachal Pradesh", "D": "Manipur"}}, {"q": 87, "text": "In October 2025, which severe cyclonic storm affected the eastern coastal parts of India?", "options": {"A": "Fengal", "B": "Shakti", "C": "Montha", "D": "Asna"}}, {"q": 88, "text": "Which of the following rivers had the ancient name Askini?", "options": {"A": "Beas", "B": "Chenab", "C": "Jhelum", "D": "Ravi"}}, {"q": 89, "text": "According to the India State of Forest Report 2023, which were the top three States in the country in terms of area under forests?", "options": {"A": "Madhya Pradesh, Jharkhand, Chhattisgarh", "B": "Madhya Pradesh, Himachal Pradesh, Manipur", "C": "Madhya Pradesh, Arunachal Pradesh, Sikkim", "D": "Madhya Pradesh, Maharashtra, Odisha"}}, {"q": 90, "text": "Which of the following was the correct ascending order of the States in the installed capacity of renewable energy up to December 2025?", "options": {"A": "Gujarat, Rajasthan, Tamil Nadu, Maharashtra", "B": "Karnataka, Maharashtra, Rajasthan, Gujarat", "C": "Tamil Nadu, Maharashtra, Rajasthan, Gujarat", "D": "Karnataka, Maharashtra, Gujarat, Rajasthan"}}, {"q": 91, "text": "According to Census 2011, the correct descending order of districts in population growth during 2001-11 decade is:", "options": {"A": "Bhopal, Jhabua, Indore", "B": "Bhopal, Indore, Gwalior", "C": "Indore, Bhopal, Gwalior", "D": "Indore, Jhabua, Bhopal"}}, {"q": 92, "text": "Indian Astronomers are researching towards establishing a new mean time 'Dongla Mean Time (DMT)'. Village Dongla is situated in which district of Madhya Pradesh?", "options": {"A": "Dewas", "B": "Ujjain", "C": "Dhar", "D": "Barwani"}}, {"q": 93, "text": "What was the position of Madhya Pradesh in the production of pulses in the year 2021-22 in India?", "options": {"A": "First", "B": "Second", "C": "Third", "D": "Fourth"}}, {"q": 94, "text": "Which of the following soils is found in the Chambal basin?", "options": {"A": "Red and yellow soil", "B": "Laterite soil", "C": "Alluvial soil", "D": "Red loamy soil"}}, {"q": 95, "text": "The Asirgarh hills are situated:", "options": {"A": "In the western Satpura.", "B": "In the eastern Satpura.", "C": "In the Maikal range.", "D": "In the Baghelkhand plateau."}}, {"q": 96, "text": "Match List-I (Rivers) with List-II (Tributaries): (a) Chambal (b) Tons (Tamsa) (c) Narmada (d) Kshipra &mdash; (i) Belan (ii) Parvati (iii) Gambhir (iv) Tawa", "options": {"A": "(iii) (ii) (i) (iv)", "B": "(iii) (iv) (ii) (i)", "C": "(ii) (i) (iv) (iii)", "D": "(i) (iii) (ii) (iv)"}}, {"q": 97, "text": "The reason for the high variability of rainfall in the northwestern part of Madhya Pradesh is:", "options": {"A": "Low rainfall.", "B": "High rainfall.", "C": "High temperature.", "D": "Continuous rainfall."}}, {"q": 98, "text": "Baihar plateau of Balaghat is known for which mineral deposits?", "options": {"A": "Zinc", "B": "Iron ore", "C": "Dolomite", "D": "Bauxite"}}, {"q": 99, "text": "Match List-I (Irrigation Projects) with List-II (Rivers): (a) The Samrat Ashok Sagar Project (b) The Bansagar Project (c) The Harsi Project (d) The Omkareshwar Project &mdash; (i) Son (ii) Parvati (iii) Narmada (iv) Halali", "options": {"A": "(i) (iv) (ii) (iii)", "B": "(ii) (iii) (i) (iv)", "C": "(iv) (i) (ii) (iii)", "D": "(ii) (i) (iii) (iv)"}}, {"q": 100, "text": "Where was the first sugar factory established in Madhya Pradesh?", "options": {"A": "Kailaras", "B": "Sehore", "C": "Dabra", "D": "Jaora"}}];
+const B_TO_A = {"1": 87, "2": 86, "3": 89, "4": 90, "5": 85, "6": 81, "7": 88, "8": 82, "9": 83, "10": 84, "11": 41, "12": 43, "13": 48, "14": 49, "15": 46, "16": 47, "17": 50, "18": 45, "19": 42, "20": 44, "21": 61, "22": 66, "23": 65, "24": 62, "25": 70, "26": 64, "27": 68, "28": 69, "29": 63, "30": 67, "31": 51, "32": 58, "33": 55, "34": 60, "35": 54, "36": 52, "37": 53, "38": 57, "39": 56, "40": 59, "41": 26, "42": 22, "43": 29, "44": 24, "45": 25, "46": 21, "47": 27, "48": 28, "49": 30, "50": 23, "51": 36, "52": 37, "53": 33, "54": 39, "55": 35, "56": 32, "57": 34, "58": 38, "59": 40, "60": 31, "61": 91, "62": 100, "63": 94, "64": 95, "65": 96, "66": 93, "67": 98, "68": 92, "69": 97, "70": 99, "71": 11, "72": 13, "73": 15, "74": 14, "75": 20, "76": 17, "77": 12, "78": 19, "79": 16, "80": 18, "81": 1, "82": 4, "83": 5, "84": 7, "85": 6, "86": 9, "87": 8, "88": 2, "89": 3, "90": 10, "91": 80, "92": 76, "93": 77, "94": 78, "95": 79, "96": 71, "97": 72, "98": 73, "99": 74, "100": 75};
+const A_TO_B = {"87": 1, "86": 2, "89": 3, "90": 4, "85": 5, "81": 6, "88": 7, "82": 8, "83": 9, "84": 10, "41": 11, "43": 12, "48": 13, "49": 14, "46": 15, "47": 16, "50": 17, "45": 18, "42": 19, "44": 20, "61": 21, "66": 22, "65": 23, "62": 24, "70": 25, "64": 26, "68": 27, "69": 28, "63": 29, "67": 30, "51": 31, "58": 32, "55": 33, "60": 34, "54": 35, "52": 36, "53": 37, "57": 38, "56": 39, "59": 40, "26": 41, "22": 42, "29": 43, "24": 44, "25": 45, "21": 46, "27": 47, "28": 48, "30": 49, "23": 50, "36": 51, "37": 52, "33": 53, "39": 54, "35": 55, "32": 56, "34": 57, "38": 58, "40": 59, "31": 60, "91": 61, "100": 62, "94": 63, "95": 64, "96": 65, "93": 66, "98": 67, "92": 68, "97": 69, "99": 70, "11": 71, "13": 72, "15": 73, "14": 74, "20": 75, "17": 76, "12": 77, "19": 78, "16": 79, "18": 80, "1": 81, "4": 82, "5": 83, "7": 84, "6": 85, "9": 86, "8": 87, "2": 88, "3": 89, "10": 90, "80": 91, "76": 92, "77": 93, "78": 94, "79": 95, "71": 96, "72": 97, "73": 98, "74": 99, "75": 100};
+const B_TO_C = {"1": 73, "2": 79, "3": 75, "4": 74, "5": 71, "6": 72, "7": 76, "8": 78, "9": 77, "10": 80, "11": 57, "12": 58, "13": 54, "14": 55, "15": 53, "16": 59, "17": 56, "18": 60, "19": 51, "20": 52, "21": 35, "22": 33, "23": 34, "24": 36, "25": 39, "26": 32, "27": 31, "28": 40, "29": 37, "30": 38, "31": 81, "32": 88, "33": 83, "34": 90, "35": 85, "36": 86, "37": 82, "38": 87, "39": 84, "40": 89, "41": 18, "42": 16, "43": 13, "44": 14, "45": 11, "46": 17, "47": 12, "48": 19, "49": 15, "50": 20, "51": 7, "52": 2, "53": 3, "54": 6, "55": 5, "56": 1, "57": 10, "58": 9, "59": 4, "60": 8, "61": 46, "62": 50, "63": 47, "64": 42, "65": 44, "66": 45, "67": 43, "68": 48, "69": 49, "70": 41, "71": 93, "72": 98, "73": 92, "74": 91, "75": 99, "76": 95, "77": 94, "78": 100, "79": 97, "80": 96, "81": 62, "82": 66, "83": 61, "84": 69, "85": 68, "86": 67, "87": 64, "88": 63, "89": 65, "90": 70, "91": 27, "92": 24, "93": 30, "94": 22, "95": 21, "96": 26, "97": 29, "98": 23, "99": 25, "100": 28};
+const C_TO_B = {"73": 1, "79": 2, "75": 3, "74": 4, "71": 5, "72": 6, "76": 7, "78": 8, "77": 9, "80": 10, "57": 11, "58": 12, "54": 13, "55": 14, "53": 15, "59": 16, "56": 17, "60": 18, "51": 19, "52": 20, "35": 21, "33": 22, "34": 23, "36": 24, "39": 25, "32": 26, "31": 27, "40": 28, "37": 29, "38": 30, "81": 31, "88": 32, "83": 33, "90": 34, "85": 35, "86": 36, "82": 37, "87": 38, "84": 39, "89": 40, "18": 41, "16": 42, "13": 43, "14": 44, "11": 45, "17": 46, "12": 47, "19": 48, "15": 49, "20": 50, "7": 51, "2": 52, "3": 53, "6": 54, "5": 55, "1": 56, "10": 57, "9": 58, "4": 59, "8": 60, "46": 61, "50": 62, "47": 63, "42": 64, "44": 65, "45": 66, "43": 67, "48": 68, "49": 69, "41": 70, "93": 71, "98": 72, "92": 73, "91": 74, "99": 75, "95": 76, "94": 77, "100": 78, "97": 79, "96": 80, "62": 81, "66": 82, "61": 83, "69": 84, "68": 85, "67": 86, "64": 87, "63": 88, "65": 89, "70": 90, "27": 91, "24": 92, "30": 93, "22": 94, "21": 95, "26": 96, "29": 97, "23": 98, "25": 99, "28": 100};
+const B_TO_D = {"96": 1, "91": 2, "95": 3, "97": 4, "100": 5, "92": 6, "94": 7, "99": 8, "98": 9, "93": 10, "27": 11, "30": 12, "25": 13, "28": 14, "24": 15, "21": 16, "26": 17, "29": 18, "22": 19, "23": 20, "7": 21, "1": 22, "2": 23, "9": 24, "4": 25, "3": 26, "6": 27, "8": 28, "5": 29, "10": 30, "81": 31, "83": 32, "82": 33, "90": 34, "84": 35, "88": 36, "86": 37, "87": 38, "85": 39, "89": 40, "60": 41, "55": 42, "51": 43, "58": 44, "56": 45, "52": 46, "59": 47, "53": 48, "54": 49, "57": 50, "61": 51, "70": 52, "64": 53, "63": 54, "66": 55, "62": 56, "65": 57, "69": 58, "68": 59, "67": 60, "36": 61, "40": 62, "33": 63, "31": 64, "39": 65, "34": 66, "35": 67, "38": 68, "32": 69, "37": 70, "45": 71, "46": 72, "50": 73, "44": 74, "47": 75, "41": 76, "42": 77, "48": 78, "43": 79, "49": 80, "72": 81, "80": 82, "78": 83, "79": 84, "77": 85, "71": 86, "74": 87, "73": 88, "75": 89, "76": 90, "16": 91, "18": 92, "19": 93, "20": 94, "11": 95, "12": 96, "13": 97, "15": 98, "17": 99, "14": 100};
+const D_TO_B = {"1": 96, "2": 91, "3": 95, "4": 97, "5": 100, "6": 92, "7": 94, "8": 99, "9": 98, "10": 93, "11": 27, "12": 30, "13": 25, "14": 28, "15": 24, "16": 21, "17": 26, "18": 29, "19": 22, "20": 23, "21": 7, "22": 1, "23": 2, "24": 9, "25": 4, "26": 3, "27": 6, "28": 8, "29": 5, "30": 10, "31": 81, "32": 83, "33": 82, "34": 90, "35": 84, "36": 88, "37": 86, "38": 87, "39": 85, "40": 89, "41": 60, "42": 55, "43": 51, "44": 58, "45": 56, "46": 52, "47": 59, "48": 53, "49": 54, "50": 57, "51": 61, "52": 70, "53": 64, "54": 63, "55": 66, "56": 62, "57": 65, "58": 69, "59": 68, "60": 67, "61": 36, "62": 40, "63": 33, "64": 31, "65": 39, "66": 34, "67": 35, "68": 38, "69": 32, "70": 37, "71": 45, "72": 46, "73": 50, "74": 44, "75": 47, "76": 41, "77": 42, "78": 48, "79": 43, "80": 49, "81": 72, "82": 80, "83": 78, "84": 79, "85": 77, "86": 71, "87": 74, "88": 73, "89": 75, "90": 76, "91": 16, "92": 18, "93": 19, "94": 20, "95": 11, "96": 12, "97": 13, "98": 15, "99": 17, "100": 14};
+
+
+const OFFICIAL_KEYS_BY_SET = {
+  A: {1:"B",2:"C",3:"C",4:"D",5:"C",6:"C",7:"B",8:"B",9:"C",10:"C",11:"B",12:"D",13:"D",14:"D",15:"A",16:"B",17:"B",18:"D",19:"D",20:"A",21:"B",22:"B",23:"B",24:"A",25:"A",26:"C",27:"B",28:"C",29:"A",30:"C",31:"D",32:"D",33:"C",34:"A",35:"D",36:"B",37:"D",38:"C",39:"A",40:"C",41:"A",42:"B",43:"D",44:"C",45:"C",46:"B",47:"B",48:"B",49:"D",50:"D",51:"B",52:"A",53:"B",54:"C",55:"C",56:"B",57:"D",58:"D",59:"B",60:"B",61:"C",62:"D",63:"A",64:"A",65:"A",66:"B",67:"D",68:"B",69:"B",70:"A",71:"C",72:"A",73:"A",74:"C",75:"B",76:"A",77:"A",78:"A",79:"A",80:"A",81:"D",82:"D",83:"D",84:"A",85:"B",86:"B",87:"C",88:"C",89:"C",90:"A",91:"B",92:"A",93:"C",94:"B",95:"B",96:"C",97:"A",98:"A",99:"C",100:"C"},
+  B: {1:"C",2:"B",3:"C",4:"A",5:"B",6:"D",7:"C",8:"D",9:"D",10:"A",11:"A",12:"D",13:"B",14:"D",15:"B",16:"B",17:"D",18:"C",19:"B",20:"C",21:"C",22:"B",23:"A",24:"D",25:"A",26:"A",27:"B",28:"B",29:"A",30:"D",31:"B",32:"D",33:"C",34:"B",35:"C",36:"A",37:"B",38:"D",39:"B",40:"B",41:"C",42:"B",43:"A",44:"A",45:"A",46:"B",47:"B",48:"C",49:"C",50:"B",51:"B",52:"D",53:"C",54:"A",55:"D",56:"D",57:"A",58:"C",59:"C",60:"D",61:"B",62:"C",63:"B",64:"B",65:"C",66:"C",67:"A",68:"A",69:"A",70:"C",71:"B",72:"D",73:"A",74:"D",75:"A",76:"B",77:"D",78:"D",79:"B",80:"D",81:"B",82:"D",83:"C",84:"B",85:"C",86:"C",87:"B",88:"C",89:"C",90:"C",91:"A",92:"A",93:"A",94:"A",95:"A",96:"C",97:"A",98:"A",99:"C",100:"B"},
+  C: {1:"D",2:"D",3:"C",4:"C",5:"D",6:"A",7:"B",8:"D",9:"C",10:"A",11:"A",12:"B",13:"A",14:"A",15:"C",16:"B",17:"B",18:"C",19:"C",20:"B",21:"A",22:"A",23:"A",24:"A",25:"C",26:"C",27:"A",28:"B",29:"A",30:"A",31:"B",32:"A",33:"B",34:"A",35:"C",36:"D",37:"A",38:"D",39:"A",40:"B",41:"C",42:"B",43:"A",44:"C",45:"C",46:"B",47:"B",48:"A",49:"A",50:"C",51:"B",52:"C",53:"B",54:"B",55:"D",56:"D",57:"A",58:"D",59:"B",60:"C",61:"C",62:"B",63:"C",64:"B",65:"C",66:"D",67:"C",68:"C",69:"B",70:"C",71:"B",72:"D",73:"C",74:"A",75:"C",76:"C",77:"D",78:"D",79:"B",80:"A",81:"B",82:"B",83:"C",84:"B",85:"C",86:"A",87:"D",88:"D",89:"B",90:"B",91:"D",92:"A",93:"B",94:"D",95:"B",96:"D",97:"B",98:"D",99:"A",100:"D"},
+  D: {1:"C",2:"A",3:"A",4:"A",5:"B",6:"A",7:"A",8:"C",9:"A",10:"A",11:"B",12:"D",13:"A",14:"B",15:"D",16:"C",17:"A",18:"A",19:"B",20:"A",21:"C",22:"C",23:"B",24:"D",25:"A",26:"C",27:"D",28:"D",29:"B",30:"A",31:"B",32:"C",33:"D",34:"C",35:"B",36:"C",37:"C",38:"B",39:"C",40:"C",41:"D",42:"D",43:"B",44:"C",45:"D",46:"D",47:"C",48:"C",49:"A",50:"A",51:"B",52:"C",53:"B",54:"B",55:"C",56:"C",57:"C",58:"A",59:"A",60:"A",61:"A",62:"B",63:"C",64:"B",65:"B",66:"B",67:"C",68:"D",69:"D",70:"B",71:"A",72:"B",73:"B",74:"A",75:"B",76:"C",77:"B",78:"C",79:"A",80:"C",81:"D",82:"D",83:"D",84:"B",85:"D",86:"B",87:"D",88:"A",89:"A",90:"B",91:"B",92:"C",93:"B",94:"C",95:"A",96:"D",97:"B",98:"B",99:"D",100:"D"}
+};
+
+
+function normalizeAnswer(ans) {
+  if (ans === null || ans === undefined) return null;
+  if (typeof ans !== 'string') return String(ans).trim();
+  const s = ans.trim();
+  if (!s || s.toLowerCase() === 'none') return null;
+  return s;
+}
+function getCorrectAnswer(instName, displayNum, setName) {
+  if (instName === "Official Key (MPPSC)") {
+    return normalizeAnswer(OFFICIAL_KEYS_BY_SET[setName]?.[displayNum]);
+  }
+  if (instName === "MGICS") {
+    return normalizeAnswer(MGICS_KEYS_BY_SET[setName]?.[displayNum]);
+  }
+  const key = INSTITUTE_KEYS[instName] || {};
+  const bNum = getDisplayNumToBNum(displayNum, setName);
+  return normalizeAnswer(key[bNum]);
+}
+
+
+function isAnswerCorrect(userAns, correctAns) {
+  if (!userAns || userAns === 'skip' || !correctAns) return false;
+  const c = normalizeAnswer(correctAns);
+  if (!c) return false;
+  if (c.includes(',')) return c.split(',').map(s => s.trim()).includes(userAns);
+  return userAns === c;
+}
+
+
+const MGICS_KEYS_BY_SET = {
+  A: {1:"B",2:"B",3:"C",4:"D",5:"C",6:"C",7:"B",8:"C",9:"C",10:null,11:"B",12:"D",13:"D",14:"D",15:"A",16:"B",17:"C",18:"D",19:"D",20:"A",21:"B",22:"D",23:"B",24:"C",25:"A",26:"C",27:"B",28:"C",29:"A",30:"C",31:"D",32:"B",33:"C",34:"A",35:"D",36:"B",37:"D",38:"C",39:"A",40:"C",41:"A",42:"B",43:"D",44:"C",45:"C",46:"B",47:"B",48:"B",49:"D",50:"D",51:"B",52:"A",53:"B",54:"C",55:"C",56:"D",57:"C",58:"D",59:"D",60:"B",61:"C",62:"D",63:"A",64:"A,C",65:"A",66:"B",67:"C",68:"D",69:"B",70:"B",71:"C",72:"A",73:"D",74:"C",75:"D",76:"B",77:"A",78:"C",79:"A",80:"D",81:"D",82:"D",83:"D",84:"A",85:"B",86:"B",87:"C",88:"C",89:"C",90:"A",91:"B",92:"A",93:"B",94:"C",95:"B",96:"C",97:"A",98:"C",99:"C",100:"A"},
+  B: {1:"C",2:"B",3:"C",4:"A",5:"B",6:"D",7:"C",8:"D",9:"D",10:"A",11:"A",12:"D",13:"B",14:"D",15:"B",16:"B",17:"D",18:"C",19:"B",20:"C",21:"C",22:"B",23:"A",24:"D",25:"B",26:"A,C",27:"D",28:"B",29:"A",30:"C",31:"B",32:"D",33:"C",34:"B",35:"C",36:"A",37:"B",38:"C",39:"D",40:"D",41:"C",42:"D",43:"A",44:"C",45:"A",46:"B",47:"B",48:"C",49:"C",50:"B",51:"B",52:"D",53:"C",54:"A",55:"D",56:"B",57:"A",58:"C",59:"C",60:"D",61:"B",62:"A",63:"C",64:"B",65:"C",66:"B",67:"C",68:"A",69:"A",70:"C",71:"B",72:"D",73:"A",74:"D",75:"A",76:"C",77:"D",78:"D",79:"B",80:"D",81:"B",82:"D",83:"C",84:"B",85:"C",86:"C",87:"C",88:"B",89:"C",90:null,91:"D",92:"B",93:"A",94:"C",95:"A",96:"C",97:"A",98:"D",99:"C",100:"D"},
+  C: {1:"B",2:"D",3:"C",4:"C",5:"D",6:"A",7:"B",8:"D",9:"C",10:"A",11:"A",12:"B",13:"A",14:"C",15:"C",16:"D",17:"B",18:"C",19:"C",20:"B",21:"A",22:"C",23:"D",24:"B",25:"C",26:"C",27:"D",28:"D",29:"A",30:"A",31:"D",32:"A,C",33:"B",34:"A",35:"C",36:"D",37:"A",38:"C",39:"B",40:"B",41:"C",42:"B",43:"C",44:"C",45:"B",46:"B",47:"C",48:"A",49:"A",50:"A",51:"B",52:"C",53:"B",54:"B",55:"D",56:"D",57:"A",58:"D",59:"B",60:"C",61:"C",62:"B",63:"B",64:"C",65:"C",66:"D",67:"C",68:"C",69:"B",70:null,71:"B",72:"D",73:"C",74:"A",75:"C",76:"C",77:"D",78:"D",79:"B",80:"A",81:"B",82:"B",83:"C",84:"D",85:"C",86:"A",87:"C",88:"D",89:"D",90:"B",91:"D",92:"A",93:"B",94:"D",95:"C",96:"D",97:"B",98:"D",99:"A",100:"D"},
+  D: {1:"C",2:"D",3:"A",4:"A",5:"D",6:"B",7:"C",8:"C",9:"D",10:"A",11:"D",12:"C",13:"B",14:"B",15:"D",16:"C",17:"A,C",18:"A",19:"B",20:"A",21:"C",22:"C",23:"B",24:"D",25:"A",26:"C",27:"D",28:"D",29:"B",30:"A",31:"B",32:"C",33:"D",34:null,35:"B",36:"B",37:"C",38:"C",39:"C",40:"C",41:"D",42:"D",43:"B",44:"C",45:"B",46:"D",47:"C",48:"C",49:"A",50:"A",51:"B",52:"C",53:"B",54:"C",55:"B",56:"A",57:"C",58:"A",59:"A",60:"C",61:"A",62:"D",63:"C",64:"B",65:"D",66:"B",67:"C",68:"C",69:"D",70:"B",71:"A",72:"B",73:"B",74:"C",75:"B",76:"C",77:"D",78:"C",79:"A",80:"C",81:"D",82:"D",83:"D",84:"B",85:"D",86:"B",87:"D",88:"A",89:"A",90:"C",91:"B",92:"C",93:"B",94:"C",95:"A",96:"D",97:"B",98:"B",99:"D",100:"D"}
+};
+// ============================================================
+// INSTITUTE ANSWER KEYS
+// All keys stored as Set B question numbers -> answer
+// Admin: fill in the actual answers below
+// ============================================================
+const INSTITUTE_KEYS = {
+  "MGICS": {},
+  "Official Key (MPPSC)": {
+    1:"C",2:"B",3:"C",4:"A",5:"B",6:"D",7:"C",8:"D",9:"D",10:"A",
+    11:"A",12:"D",13:"B",14:"D",15:"B",16:"B",17:"D",18:"C",19:"B",20:"C",
+    21:"C",22:"B",23:"A",24:"D",25:"A",26:"A",27:"B",28:"B",29:"A",30:"D",
+    31:"B",32:"D",33:"C",34:"B",35:"C",36:"A",37:"B",38:"D",39:"B",40:"B",
+    41:"C",42:"B",43:"A",44:"A",45:"A",46:"B",47:"B",48:"C",49:"C",50:"B",
+    51:"B",52:"D",53:"C",54:"A",55:"D",56:"D",57:"A",58:"C",59:"C",60:"D",
+    61:"B",62:"C",63:"B",64:"B",65:"C",66:"C",67:"A",68:"A",69:"A",70:"C",
+    71:"B",72:"D",73:"A",74:"D",75:"A",76:"B",77:"D",78:"D",79:"B",80:"D",
+    81:"B",82:"D",83:"C",84:"B",85:"C",86:"C",87:"B",88:"C",89:"C",90:"C",
+    91:"A",92:"A",93:"A",94:"A",95:"A",96:"C",97:"A",98:"A",99:"C",100:"B"
+  },
+  "Adda247": {1:"C",2:"B",3:"A",4:"A",5:"B",6:"D",7:"B",8:"D",9:"D",10:"A",11:"A",12:"D",13:"B",14:"D",15:"B",16:"B",17:"D",18:"C",19:"B",20:"C",21:"C",22:"B",23:"A",24:"D",25:"B",26:"A",27:"B",28:"B",29:"A",30:"D",31:"B",32:"D",33:"C",34:"D",35:"C",36:"A",37:"B",38:"D",39:"B",40:"B",41:"C",42:"B",43:"A",44:"A",45:"A",46:"B",47:"B",48:"C",49:"C",50:"B",51:"B",52:"D",53:"C",54:"A",55:"D",56:"D",57:"A",58:"C",59:"C",60:"D",61:"B",62:"C",63:"B",64:"B",65:"C",66:"C",67:"C",68:"A",69:"A",70:"C",71:"B",72:"D",73:"A",74:"D",75:"A",76:"C",77:"D",78:"D",79:"B",80:"D",81:"B",82:"D",83:"C",84:"B",85:"C",86:"C",87:"C",88:"B",89:"C",90:"C",91:"A",92:"A",93:"A",94:"A",95:"A",96:"C",97:"A",98:"A",99:"C",100:"B"},
+  "Drishti IAS": {1:"C",2:"B",3:"C",4:"A",5:"B",6:"D",7:"C",8:"D",9:"D",10:"A",11:"A",12:"D",13:"B",14:"D",15:"B",16:"B",17:"D",18:"C",19:"B",20:"C",21:"C",22:"B",23:"A",24:"D",25:"B",26:"C",27:"D",28:"B",29:"A",30:"C",31:"B",32:"D",33:"C",34:"B",35:"C",36:"A",37:"B",38:"C",39:"D",40:"D",41:"C",42:"D",43:"A",44:"C",45:"A",46:"B",47:"B",48:"C",49:"C",50:"B",51:"B",52:"D",53:"C",54:"A",55:"D",56:"D",57:"A",58:"C",59:"C",60:"D",61:"B",62:"A",63:"C",64:"B",65:"C",66:"B",67:"C",68:"A",69:"A",70:"C",71:"B",72:"D",73:"A",74:"D",75:"A",76:"C",77:"D",78:"D",79:"B",80:"D",81:"B",82:"D",83:"C",84:"B",85:"C",86:"C",87:"C",88:"B",89:"C",90:"B",91:"D",92:"B",93:"A",94:"C",95:"A",96:"C",97:"A",98:"D",99:"C",100:"D"},
+  "Physics Wallah": {1:"C",2:"B",3:"C",4:"A",5:"B",6:"D",7:"C",8:"D",9:"D",10:"A",11:"A",12:"D",13:"B",14:"D",15:"B",16:"B",17:"D",18:"C",19:"B",20:"C",21:"C",22:"B",23:"A",24:"D",25:"D",26:"C",27:"D",28:"B",29:"A",30:"C",31:"B",32:"D",33:"C",34:"B",35:"D",36:"A",37:"B",38:"C",39:"D",40:"D",41:"C",42:"D",43:"A",44:"C",45:"A",46:"B",47:"B",48:"C",49:"C",50:"B",51:"B",52:"D",53:"C",54:"A",55:"D",56:"B",57:"A",58:"C",59:"C",60:"D",61:"D",62:"A",63:"C",64:"B",65:"C",66:"B",67:"C",68:"A",69:"A",70:"C",71:"B",72:"D",73:"A",74:"D",75:"A",76:"C",77:"D",78:"D",79:"B",80:"D",81:"B",82:"D",83:"C",84:"B",85:"C",86:"C",87:"C",88:"B",89:"D",90:"C",91:"D",92:"B",93:"A",94:"C",95:"A",96:"C",97:"A",98:"D",99:"C",100:"D"},
+  "Vision IAS": {},
+  "Vajiram Ravi": {}
+};
+
+// ============================================================
+// &#9881;  CONFIG &mdash; FILL THESE IN AFTER SETUP
+// ============================================================
+const CONFIG = {
+  // --- EmailJS ---
+  // Sign up free at https://emailjs.com
+  // Then: Email Services &rarr; Add Service (Gmail) &rarr; copy Service ID
+  EMAILJS_SERVICE_ID: "service_nkm4ful",
+  EMAILJS_TEMPLATE_ID: "template_c222bhe",
+  EMAILJS_PUBLIC_KEY: "Vy-K3ts088-QCROny",
+
+  // --- Google Sheets ---
+  // See README below for how to set up the Apps Script Web App
+  // Sheet columns: email | name | set | score | timestamp | category
+  GOOGLE_SHEET_URL: "https://script.google.com/macros/s/AKfycbzUxyA_Om4SXvC1Eehk2_1AkIZbZTIlJiS5Qca7srQ7S3DE_oH4QlhpqBg3PV2bjfDZ/exec",
+};
+
+// ============================================================
+// &#9881;  GOOGLE SHEETS SETUP INSTRUCTIONS (READ THIS!)
+// ============================================================
+// 1. Create a new Google Sheet with these columns in Row 1:
+//    A: email  B: name  C: approved  D: set  E: score  F: category  G: timestamp
+//
+// 2. In the Sheet, go to Extensions &rarr; Apps Script
+// 3. Paste this code:
+/*
+  function doGet(e) {
+    const email = e.parameter.email;
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0].toString().toLowerCase().trim() === email.toLowerCase().trim()) {
+        if (data[i][2].toString().toLowerCase() === 'yes') {
+          return ContentService.createTextOutput(JSON.stringify({approved: true, name: data[i][1]}))
+            .setMimeType(ContentService.MimeType.JSON);
+        } else {
+          return ContentService.createTextOutput(JSON.stringify({approved: false}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({approved: false, notfound: true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  function doPost(e) {
+    const data = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    // Find existing row or add new score row
+    const allData = sheet.getDataRange().getValues();
+    for (let i = 1; i < allData.length; i++) {
+      if (allData[i][0].toString().toLowerCase().trim() === data.email.toLowerCase().trim()) {
+        sheet.getRange(i+1, 4).setValue(data.set);
+        sheet.getRange(i+1, 5).setValue(data.score);
+        sheet.getRange(i+1, 6).setValue(data.category || '');
+        sheet.getRange(i+1, 7).setValue(new Date().toISOString());
+        return ContentService.createTextOutput(JSON.stringify({saved: true}))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    sheet.appendRow([data.email,'',data.approved||'no',data.set,data.score,data.category||'',new Date().toISOString()]);
+    return ContentService.createTextOutput(JSON.stringify({saved: true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+*/
+// 4. Click Deploy &rarr; New Deployment &rarr; Web App
+//    Execute as: Me | Who has access: Anyone
+// 5. Copy the Web App URL &rarr; paste in CONFIG.GOOGLE_SHEET_URL above
+// 6. To approve a buyer: open the sheet, find their row, set column C to "yes"
+// ============================================================
+
+let selectedSet = null;
+let userAnswers = {};
+let currentQuestions = [];
+let verifiedEmail = null;
+let verifiedName = null;
+let generatedOtp = null;
+let otpExpiry = null;
+
+// Load EmailJS
+(function() {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+  s.onload = () => emailjs.init(CONFIG.EMAILJS_PUBLIC_KEY);
+  document.head.appendChild(s);
+})();
+
+function showLoginError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+function setLoading(btnId, loading, defaultText) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Please wait...' : defaultText;
+  btn.style.opacity = loading ? '0.6' : '1';
+}
+
+async function sendOtp() {
+  const email = document.getElementById('email-input').value.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showLoginError('email-error', 'Please enter a valid email address.');
+    return;
+  }
+
+  setLoading('send-otp-btn', true, 'Send OTP &rarr;');
+
+  try {
+    // Check if email is approved in Google Sheet
+    const res = await fetch(`${CONFIG.GOOGLE_SHEET_URL}?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+
+    if (!data.approved) {
+      setLoading('send-otp-btn', false, 'Send OTP &rarr;');
+      if (data.notfound) {
+        showLoginError('email-error', 'Email not found. Please purchase access first and contact on Telegram.');
+      } else {
+        showLoginError('email-error', 'Your access is pending approval. Contact on Telegram.');
+      }
+      return;
+    }
+
+    verifiedName = data.name || '';
+
+    // Generate 6-digit OTP
+    generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
+    otpExpiry = Date.now() + 10 * 60 * 1000; // 10 mins
+
+    // Send OTP via EmailJS
+    await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      otp: generatedOtp,
+      to_name: verifiedName || email.split('@')[0],
+    });
+
+    verifiedEmail = email;
+    document.getElementById('otp-sent-to').textContent = email;
+    document.getElementById('step-email').style.display = 'none';
+    document.getElementById('step-otp').style.display = 'block';
+
+  } catch (err) {
+    console.error(err);
+    showLoginError('email-error', 'Something went wrong. Please check your connection and try again.');
+  }
+
+  setLoading('send-otp-btn', false, 'Send OTP &rarr;');
+}
+
+function verifyOtp() {
+  const entered = document.getElementById('otp-input').value.trim();
+  if (!entered) { showLoginError('otp-error', 'Please enter the OTP.'); return; }
+  if (Date.now() > otpExpiry) { showLoginError('otp-error', 'OTP expired. Please go back and resend.'); return; }
+  if (entered !== generatedOtp) { showLoginError('otp-error', 'Incorrect OTP. Please try again.'); return; }
+
+  //  Access granted
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Show welcome if name available
+  if (verifiedName) {
+    const bar = document.querySelector('.top-bar-right');
+    const greeting = document.createElement('span');
+    greeting.style.cssText = 'font-size:13px;color:rgba(255,255,255,0.5);margin-right:4px;';
+    greeting.textContent = `Hi, ${verifiedName}`;
+    bar.prepend(greeting);
+  }
+}
+
+async function resendOtp() {
+  document.getElementById('otp-input').value = '';
+  document.getElementById('step-otp').style.display = 'none';
+  document.getElementById('step-email').style.display = 'block';
+  document.getElementById('email-input').value = verifiedEmail || '';
+  await sendOtp();
+}
+
+function backToEmail() {
+  document.getElementById('step-otp').style.display = 'none';
+  document.getElementById('step-email').style.display = 'block';
+  generatedOtp = null;
+}
+
+// Save result to Google Sheet after calculating
+async function saveResultToSheet(set, score, category) {
+  if (!verifiedEmail || !CONFIG.GOOGLE_SHEET_URL || CONFIG.GOOGLE_SHEET_URL.includes('YOUR_')) return;
+  try {
+    await fetch(CONFIG.GOOGLE_SHEET_URL, {
+      method: 'POST',
+      body: JSON.stringify({ email: verifiedEmail, set, score, category }),
+    });
+  } catch(e) { /* silent fail */ }
+}
+
+function selectSet(s) {
+  // All sets now supported
+  selectedSet = s;
+  document.querySelectorAll('.set-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('set-' + s).classList.add('active');
+}
+
+
+function getDisplayNumToBNum(displayNum, set) {
+  // Always returns the Set B question number
+  if (set === 'A') return parseInt(A_TO_B[String(displayNum)]);
+  if (set === 'C') return parseInt(C_TO_B[String(displayNum)]);
+  if (set === 'D') return parseInt(D_TO_B[String(displayNum)]);
+  return displayNum; // Set B stays same
+}
+
+function getQuestionsForSet(set) {
+  if (set === 'B') {
+    return QUESTIONS_B.map(q => ({ ...q, displayNum: q.q }));
+  } else if (set === 'A') {
+    const result = [];
+    for (let aNum = 1; aNum <= 100; aNum++) {
+      const bNum = parseInt(A_TO_B[String(aNum)]);
+      const q = QUESTIONS_B[bNum - 1];
+      result.push({ ...q, displayNum: aNum });
+    }
+    return result;
+  } else if (set === 'C') {
+    const result = [];
+    for (let cNum = 1; cNum <= 100; cNum++) {
+      const bNum = parseInt(C_TO_B[String(cNum)]);
+      const q = QUESTIONS_B[bNum - 1];
+      result.push({ ...q, displayNum: cNum });
+    }
+    return result;
+  } else if (set === 'D') {
+    const result = [];
+    for (let dNum = 1; dNum <= 100; dNum++) {
+      const bNum = parseInt(D_TO_B[String(dNum)]);
+      const q = QUESTIONS_B[bNum - 1];
+      result.push({ ...q, displayNum: dNum });
+    }
+    return result;
+  }
+  return QUESTIONS_B.map(q => ({ ...q, displayNum: q.q }));
+}
+
+function startQuiz() {
+  if (!selectedSet) { alert('Please select a set first!'); return; }
+  userAnswers = {};
+  currentQuestions = getQuestionsForSet(selectedSet);
+  document.getElementById('set-selector').style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('quiz-section').style.display = 'block';
+  document.getElementById('calc-bar').style.display = 'flex';
+  document.getElementById('quiz-set-badge').textContent = selectedSet;
+  document.getElementById('quiz-set-name').textContent = selectedSet;
+  renderQuestions();
+  updateStats();
+  window.scrollTo(0, 0);
+}
+
+function renderQuestions() {
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '';
+  currentQuestions.forEach(q => {
+    const displayNum = q.displayNum;
+    const div = document.createElement('div');
+    div.className = 'question-card';
+    div.id = 'qcard-' + displayNum;
+    const opts = ['A','B','C','D'];
+    const optionsHTML = opts.map(key => `
+      <button class="option-btn" id="opt-${displayNum}-${key}" onclick="selectAnswer(${displayNum}, '${key}')">
+        <span class="option-key">${key}</span>
+        <span>${q.options[key]}</span>
+      </button>`).join('');
+    div.innerHTML = `
+      <div class="q-header">
+        <div class="q-num">${displayNum}</div>
+        <div class="q-text">${q.text}</div>
+      </div>
+      <div class="options-grid">${optionsHTML}</div>
+      <div style="text-align:right;margin-top:8px;">
+        <button class="skip-btn" id="skip-${displayNum}" onclick="skipQuestion(${displayNum})">Skip / Not Attempted</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function selectAnswer(qNum, opt) {
+  userAnswers[qNum] = opt;
+  ['A','B','C','D'].forEach(k => {
+    const btn = document.getElementById('opt-' + qNum + '-' + k);
+    if (btn) btn.classList.remove('selected');
+  });
+  document.getElementById('opt-' + qNum + '-' + opt)?.classList.add('selected');
+  const skipBtn = document.getElementById('skip-' + qNum);
+  if (skipBtn) { skipBtn.textContent = 'Skip / Not Attempted'; skipBtn.classList.remove('skipped'); }
+  updateStats();
+}
+
+function skipQuestion(qNum) {
+  userAnswers[qNum] = 'skip';
+  ['A','B','C','D'].forEach(k => {
+    document.getElementById('opt-' + qNum + '-' + k)?.classList.remove('selected');
+  });
+  const skipBtn = document.getElementById('skip-' + qNum);
+  if (skipBtn) { skipBtn.textContent = 'Marked as Skipped'; skipBtn.classList.add('skipped'); }
+  updateStats();
+}
+
+function updateStats() {
+  const answered = Object.values(userAnswers).filter(v => v !== 'skip').length;
+  const skipped = Object.values(userAnswers).filter(v => v === 'skip').length;
+  document.getElementById('stat-answered').textContent = answered;
+  document.getElementById('stat-skipped').textContent = skipped;
+  document.getElementById('bar-answered').textContent = answered;
+  document.getElementById('bar-skipped').textContent = skipped;
+  document.getElementById('progress-fill').style.width = ((answered + skipped) / 100 * 100).toFixed(0) + '%';
+}
+
+function getAnswerFromSetA(qNum, selectedSet) {
+  if (selectedSet === "A") return qNum;
+  if (selectedSet === "B") return B_TO_A[qNum];
+  if (selectedSet === "C") return B_TO_A[C_TO_B[qNum]];
+  if (selectedSet === "D") return B_TO_A[D_TO_B[qNum]];
+}
+
+function calculateResults() {
+  const totalQuestions = 100;
+  const totalAnswered = Object.values(userAnswers).filter(v => v && v !== 'skip').length;
+  const totalSkipped = totalQuestions - totalAnswered;
+  if (totalAnswered === 0) { alert('Please answer at least one question!'); return; }
+
+  document.getElementById('result-set-name').textContent = selectedSet;
+  document.getElementById('res-correct').textContent = '0';
+  document.getElementById('res-wrong').textContent = String(totalSkipped);
+  document.getElementById('res-skip').textContent = String(totalQuestions);
+
+  const tbody = document.getElementById('results-tbody');
+  tbody.innerHTML = '';
+
+  const institutes = ['Official Key (MPPSC)', 'MGICS', ...Object.keys(INSTITUTE_KEYS).filter(k => !['Official Key (MPPSC)','MGICS'].includes(k) && Object.keys(INSTITUTE_KEYS[k]).length > 0)];
+
+  if (institutes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">
+          <div style="font-size:40px;margin-bottom:12px;"></div>
+          <div style="font-weight:700;font-size:16px;color:var(--deep);margin-bottom:8px;">Answer keys will appear here</div>
+          <div style="font-size:13px;">Institute keys are being compiled and will be added soon.</div>
+          <div style="font-size:12px;margin-top:8px;color:#aaa;">Your answers have been recorded. Come back once keys are available!</div>
+        </td>
+      </tr>`;
+  } else {
+    let officialSummary = null;
+    institutes.forEach((instName, idx) => {
+      let correct = 0, wrong = 0, skip = 0;
+      for (let displayNum = 1; displayNum <= totalQuestions; displayNum++) {
+        const userAns = userAnswers[displayNum];
+        const correctAns = getCorrectAnswer(instName, displayNum, selectedSet);
+        if (!userAns || userAns === 'skip' || !correctAns) {
+          skip++;
+        } else if (isAnswerCorrect(userAns, correctAns)) {
+          correct++;
+        } else {
+          wrong++;
+        }
+      }
+      const score = (correct * 3) - wrong;
+      if (instName === 'Official Key (MPPSC)') officialSummary = { correct, wrong, skip, score };
+      const scoreClass = score >= 150 ? 'score-high' : score >= 90 ? 'score-mid' : 'score-low';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600;color:var(--muted)">${idx+1}</td>
+        <td style="font-weight:600">${instName}</td>
+        <td style="text-align:center" class="correct-chip">+${correct}</td>
+        <td style="text-align:center" class="wrong-chip">-${wrong}</td>
+        <td style="text-align:center;color:var(--muted)">${skip}</td>
+        <td style="text-align:center"><span class="score-chip ${scoreClass}">${score}</span></td>`;
+      tbody.appendChild(tr);
+    });
+
+    if (officialSummary) {
+      document.getElementById('res-correct').textContent = String(officialSummary.correct);
+      document.getElementById('res-wrong').textContent = String(officialSummary.skip);
+      document.getElementById('res-skip').textContent = String(totalQuestions);
+    }
+  }
+
+  document.getElementById('quiz-section').style.display = 'none';
+  document.getElementById('calc-bar').style.display = 'none';
+  document.getElementById('results-section').style.display = 'block';
+
+  // Save result to Google Sheet
+  const officialScore = officialSummary ? officialSummary.score : null;
+  const category = document.getElementById('category-select')?.value || '';
+  if (officialScore !== null) saveResultToSheet(selectedSet, officialScore, category);
+}
+
+function goHome() {
+  document.getElementById('quiz-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('calc-bar').style.display = 'none';
+  document.getElementById('set-selector').style.display = 'block';
+  selectedSet = null;
+  document.querySelectorAll('.set-card').forEach(c => c.classList.remove('active'));
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
