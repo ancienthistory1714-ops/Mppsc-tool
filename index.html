@@ -221,7 +221,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(
     <!-- Step 1: Email -->
     <div id="step-email">
       <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:16px;text-align:left;line-height:1.6;">
-        Enter the email you used to purchase access. An OTP will be sent to verify you.
+        Enter your email address. An OTP will be sent to verify you.
       </div>
       <div class="login-input-wrap">
         <input type="email" id="email-input" placeholder="your@email.com"
@@ -230,7 +230,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(
       </div>
       <button class="btn-login" id="send-otp-btn" onclick="sendOtp()">Send OTP &rarr;</button>
       <p class="login-error" id="email-error"></p>
-      <p class="login-footer">Paid access only &middot; &#8377;10 &middot; <a href="https://t.me/YOUR_TELEGRAM" target="_blank" style="color:var(--saffron);text-decoration:none;">Contact on Telegram</a></p>
+      <p class="login-footer">Free access Paid access only &middot; &#8377;10 &middot; <a href="https://t.me/YOUR_TELEGRAM" target="_blank" style="color:var(--saffron);text-decoration:none;">Contact on Telegram</a></p>middot; Verify your email to continue</p>
     </div>
 
     <!-- Step 2: OTP -->
@@ -564,34 +564,20 @@ async function sendOtp() {
     return;
   }
 
-  setLoading('send-otp-btn', true, 'Send OTP &rarr;');
+  setLoading('send-otp-btn', true, 'Send OTP →');
 
   try {
-    // Check if email is approved in Google Sheet
-    const res = await fetch(`${CONFIG.GOOGLE_SHEET_URL}?email=${encodeURIComponent(email)}`);
-    const data = await res.json();
-
-    if (!data.approved) {
-      setLoading('send-otp-btn', false, 'Send OTP &rarr;');
-      if (data.notfound) {
-        showLoginError('email-error', 'Email not found. Please purchase access first and contact on Telegram.');
-      } else {
-        showLoginError('email-error', 'Your access is pending approval. Contact on Telegram.');
-      }
-      return;
-    }
-
-    verifiedName = data.name || '';
-
     // Generate 6-digit OTP
     generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
     otpExpiry = Date.now() + 10 * 60 * 1000; // 10 mins
+
+    verifiedName = email.split('@')[0];
 
     // Send OTP via EmailJS
     await emailjs.send(CONFIG.EMAILJS_SERVICE_ID, CONFIG.EMAILJS_TEMPLATE_ID, {
       to_email: email,
       otp: generatedOtp,
-      to_name: verifiedName || email.split('@')[0],
+      to_name: verifiedName,
     });
 
     verifiedEmail = email;
@@ -604,7 +590,7 @@ async function sendOtp() {
     showLoginError('email-error', 'Something went wrong. Please check your connection and try again.');
   }
 
-  setLoading('send-otp-btn', false, 'Send OTP &rarr;');
+  setLoading('send-otp-btn', false, 'Send OTP →');
 }
 
 function verifyOtp() {
@@ -613,18 +599,30 @@ function verifyOtp() {
   if (Date.now() > otpExpiry) { showLoginError('otp-error', 'OTP expired. Please go back and resend.'); return; }
   if (entered !== generatedOtp) { showLoginError('otp-error', 'Incorrect OTP. Please try again.'); return; }
 
-  //  Access granted
+  // Access granted — log login to Google Sheet
+  logLoginToSheet(verifiedEmail);
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
-  // Show welcome if name available
-  if (verifiedName) {
-    const bar = document.querySelector('.top-bar-right');
-    const greeting = document.createElement('span');
-    greeting.style.cssText = 'font-size:13px;color:rgba(255,255,255,0.5);margin-right:4px;';
-    greeting.textContent = `Hi, ${verifiedName}`;
-    bar.prepend(greeting);
-  }
+  // Show welcome
+  const bar = document.querySelector('.top-bar-right');
+  const greeting = document.createElement('span');
+  greeting.style.cssText = 'font-size:13px;color:rgba(255,255,255,0.5);margin-right:4px;';
+  greeting.textContent = `Hi, ${verifiedName}`;
+  bar.prepend(greeting);
+}
+
+// Log user login to Google Sheet (email + timestamp)
+async function logLoginToSheet(email) {
+  if (!CONFIG.GOOGLE_SHEET_URL || CONFIG.GOOGLE_SHEET_URL.includes('YOUR_')) return;
+  try {
+    await fetch(CONFIG.GOOGLE_SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ email, action: 'login', timestamp: new Date().toISOString() }),
+    });
+  } catch(e) { /* silent fail */ }
 }
 
 async function resendOtp() {
@@ -647,6 +645,7 @@ async function saveResultToSheet(set, score, category) {
   try {
     await fetch(CONFIG.GOOGLE_SHEET_URL, {
       method: 'POST',
+      mode: 'no-cors',
       body: JSON.stringify({ email: verifiedEmail, set, score, category }),
     });
   } catch(e) { /* silent fail */ }
